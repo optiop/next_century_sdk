@@ -3,9 +3,9 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/optiop/next_century_sdk/core/schema"
@@ -27,13 +27,13 @@ type client struct {
 	apiKey string
 }
 
-func New(apiURL string) *client {
+func New(email, password, apiURL string) *client {
 	loginUrl, err := url.JoinPath(apiURL, Login)
 	if err != nil {
 		panic(err)
 	}
 
-	apiKey := genNewToken(loginUrl)
+	apiKey := genNewToken(email, password, loginUrl)
 
 	return &client{
 		apiURL: apiURL,
@@ -41,15 +41,12 @@ func New(apiURL string) *client {
 	}
 }
 
-func genNewToken(loginUrl string) string {
-	email := os.Getenv("NCM_EMAIL")
-	password := os.Getenv("NCM_PASS")
-
+func genNewToken(email, password, loginUrl string) string {
 	postData := fmt.Sprintf(`{"email": "%s", "password": "%s"}`, email, password)
 
 	resp, err := http.Post(loginUrl, "application/json", strings.NewReader(postData))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 
@@ -58,20 +55,20 @@ func genNewToken(loginUrl string) string {
 	}{}
 
 	if err = json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	return body.Token
 }
 
-func (c *client) GetDailyReads(propertyID string, timeReq schema.TimeRequest) ([]*schema.MeterData, error) {
+func (c *client) GetDailyReadsWithCustomJsonPars(propertyID string, timeReq schema.TimeRequest, structParser any) error {
 	DailyReadsUrl, err := url.JoinPath(c.apiURL, fmt.Sprintf(DailyReads, propertyID))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if timeReq.Date.IsZero() {
-		return nil, fmt.Errorf("Date is required")
+		return fmt.Errorf("Date is required")
 	}
 
 	DailyReadsUrl += fmt.Sprintf("?date=%s", timeReq.Date.Format("2006-01-02"))
@@ -86,7 +83,7 @@ func (c *client) GetDailyReads(propertyID string, timeReq schema.TimeRequest) ([
 
 	req, err := http.NewRequest("GET", DailyReadsUrl, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	req.Header.Set("authorization", c.apiKey)
@@ -94,26 +91,29 @@ func (c *client) GetDailyReads(propertyID string, timeReq schema.TimeRequest) ([
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	// if status is StatusUnauthorized gen new token
 	if resp.StatusCode == http.StatusUnauthorized {
-		loginUrl, err := url.JoinPath(c.apiURL, Login)
-		if err != nil {
-			panic(err)
-		}
-		c.apiKey = genNewToken(loginUrl)
-		return c.GetDailyReads(propertyID, timeReq)
+		log.Fatal("Unauthorized, pleas rerun the program")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Failed to get daily reads: %s", resp.Status)
+		return fmt.Errorf("Failed to get daily reads: %s", resp.Status)
 	}
 
-	meterData := []*schema.MeterData{}
-	if err = json.NewDecoder(resp.Body).Decode(&meterData); err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(structParser); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *client) GetDailyReads(propertyID string, timeReq schema.TimeRequest) ([]*schema.MeterData, error) {
+	var meterData []*schema.MeterData
+	if err := c.GetDailyReadsWithCustomJsonPars(propertyID, timeReq, &meterData); err != nil {
 		return nil, err
 	}
 

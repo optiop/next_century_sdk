@@ -3,15 +3,15 @@ package schema
 import "time"
 
 type MeterData struct {
-	ID            string           `json:"_id"`
-	Date          string           `json:"date"`
-	PropertyID    string           `json:"propertyId"`
-	DeviceID      int64            `json:"deviceId"`
-	UnitID        string           `json:"unitId"`
-	UtilityTypeID int              `json:"utilityTypeId"`
-	Data          []MeterDataEntry `json:"data"`
-	LatestRead    MeterLatestRead  `json:"latestRead"`
-	UpdatedAt     time.Time        `json:"updatedAt"`
+	ID            string            `json:"_id"`
+	Date          string            `json:"date"`
+	PropertyID    string            `json:"propertyId"`
+	DeviceID      int64             `json:"deviceId"`
+	UnitID        string            `json:"unitId"`
+	UtilityTypeID int               `json:"utilityTypeId"`
+	Data          []*MeterDataEntry `json:"data"`
+	LatestRead    MeterLatestRead   `json:"latestRead"`
+	UpdatedAt     time.Time         `json:"updatedAt"`
 }
 
 type MeterDataEntry struct {
