@@ -135,7 +135,6 @@ func (c *client) GetUnits(propertyID string) ([]*schema.Unit, error) {
 	}
 
 	req.Header.Set("authorization", c.apiKey)
-	req.Header.Set("version", "2")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
