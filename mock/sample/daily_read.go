@@ -73,3 +73,16 @@ const DailyReadsSample = `
     }
 ]
 `
+
+const UnitsSample = `
+[
+    {
+        "id": 1234,
+        "name": "Bldg 6",
+        "building_id": "Landlord",
+        "property_id": 14612,
+        "createdAt": "2022-07-01T18:57:41.269Z",
+        "updatedAt": "2024-08-22T14:07:36.977Z"
+    }
+]
+`
