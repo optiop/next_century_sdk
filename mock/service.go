@@ -66,5 +66,26 @@ func Run() {
 		}
 	})
 
+	// get units
+	// GET /api/Properties/:id/Units"
+	http.HandleFunc("GET /api/Properties/{id}/Units", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("authorization") != "test" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		id := r.PathValue("id")
+		if id != "x_1234" {
+			http.Error(w, "invalid property id", http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte(ncMockSample.UnitsSample)); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
 	log.Fatal(http.ListenAndServe(":1234", nil))
 }
